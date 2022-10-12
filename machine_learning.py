@@ -22,7 +22,7 @@ def image_class(event, context):
 
   # Prediction
   from keras.preprocessing import image
-  imagepath = '/Chen1.JPG' # need to do user image
+  imagepath = 's3://user-input-image/IMG_000204_JPG_jpg.rf.5bce6720f6ac554c1ff12be02641849a.jpg' # need to do user image
   img = image.load_img(imagepath,target_size=(224,224))
   img = np.asarray(img)
   img = np.expand_dims(img, axis=0)
