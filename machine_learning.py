@@ -25,7 +25,7 @@ def image_class(event, context):
   imagepath = 'user-image.jpg' # need to do user image
   import boto3
   s3 = boto3.resource('s3')
-  s3.Bucket('user-input-image').download_file('user-image.jpg', '/tmp/user-image.jpg')
+  s3.Bucket('user-input-image').download_file('public/user-image.jpg', '/tmp/user-image.jpg')
   image = Image.open('/tmp/user-image.jpg')
   small_image = image.resize((224,224)) # input size for VGG16 224,224
   small_imgarr = np.array(small_image)
@@ -86,7 +86,7 @@ def image_class(event, context):
 
   import csv
   s3 = boto3.resource('s3')
-  s3.Bucket('user-input-image').download_file('end_coordinates.csv', '/tmp/end_coordinates.csv') 
+  s3.Bucket('user-input-image').download_file('public/end_coordinates.csv', '/tmp/end_coordinates.csv') 
   CSVData = open('/tmp/end_coordinates.csv')
   coord_arr = np.genfromtxt(CSVData, delimiter=",")
   coord_arr[0,0] = avg_lat;
