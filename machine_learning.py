@@ -85,6 +85,15 @@ def image_class(event, context):
   avg_lon = tot_lon / 5
 
   import csv
+  s3 = boto3.client('s3')
+  # insert a while loop to pause the code while the user is still selecting their destination (dest-state.csv first cell==0)
+  csvfile = s3.get_object(Bucket='user-input-image', Key='public/dest-state.csv')
+  csvcontent = csvfile['Body'].read().split(b'\n')
+  while csvcontent == "0":
+    csvfile = s3.get_object(Bucket='user-input-image', Key='public/dest-state.csv')
+    csvcontent = csvfile['Body'].read().split(b'\n')
+
+  # Opens the end coordinate csv and writes a new csv to s3 with the start coordinate included
   s3 = boto3.resource('s3')
   s3.Bucket('user-input-image').download_file('public/end_coordinates.csv', '/tmp/end_coordinates.csv') 
   CSVData = open('/tmp/end_coordinates.csv')
@@ -96,6 +105,6 @@ def image_class(event, context):
   np.savetxt('/tmp/start_end_coordinates.csv', coord_arr, delimiter=",")
   BUCKET_NAME = 'user-input-image'
   client = boto3.client('s3')
-  client.upload_file('/tmp/start_end_coordinates.csv', BUCKET_NAME,'start_end_coordinates.csv')
+  client.upload_file('/tmp/start_end_coordinates.csv', BUCKET_NAME,'public/start_end_coordinates.csv')
 
   return avg_lat, avg_lon
