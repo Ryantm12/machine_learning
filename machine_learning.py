@@ -1,6 +1,7 @@
 ###
-# This file was created by the Aggie Map Navigation Helper team for Texas A&M Senior Capstone Project.
-# The Aggie Map Navigation Helper guides users through the Texas A&M University campus via an Android App.
+# This file was created by Ryan Middleton, Ben Alcorn, and Sara Millan for the Aggie Map Navigation Helper team for 
+# Texas A&M Senior Capstone Project. The Aggie Map Navigation Helper guides users through 
+# the Texas A&M University campus via an Android App.
 # The user inputs their destination and a picture of their surroundings(with the nearest building)and the phone app will
 # determine their location. This code completes the machine learning, image classification, and image similarity part of the
 # backend. An image is taken from an S3 upload, classified, and then compared to other images in its class to locate the user.
