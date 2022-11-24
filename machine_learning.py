@@ -35,22 +35,24 @@ import networkx as nx
 import os.path
 
 
-
 def image_class(event, context):  
   # -*- coding: utf-8 -*-
-  # Upload model from within the container image
+  # Upload the models from within the container image
+  binary_model = keras.models.load_model('404-binary2/')
   model = keras.models.load_model('404-KCV/')
   # labels for different classes of images (building names with a side number)
   CLASS_NAMES= ['ZACH6', 'ZACH5', 'ZACH4', 'ZACH3', 'ZACH2', 'ZACH1', 'WEB4', 'WEB3', 'WEB2', 'WEB1', 'PETE3', 'PETE2', 'PETE1', 'MEOB3', 'MEOB2', 'MEOB1', 'HEB4', 'HEB3', 'HEB2', 'HEB1', 'ETB5', 'ETB4', 'ETB3', 'ETB2', 'ETB1', 'DLEB1', 'CVLB2', 'CVLB1', 'CHEN3', 'CHEN2', 'CHEN1']
   # Pause the code while the user is taking an image
   # Read a csv file that will update a value to tell this code when to resume
-  s3 = boto3.client('s3')
-  csvfile = s3.get_object(Bucket='user-input-image', Key='public/image-state.csv')
-  csvcontent = csvfile['Body'].read().split(b'\n')
+  s3 = boto3.resource('s3')
+  s3.Bucket('user-input-image').download_file('public/image-state.csv', '/tmp/image-state.csv') 
+  CSVData = open('/tmp/image-state.csv')
+  csvcontent = np.genfromtxt(CSVData, delimiter=",")
   # pause the code while the user is still taking an image (image-state.csv first cell==0)
-  while csvcontent == "0":
-    csvfile = s3.get_object(Bucket='user-input-image', Key='public/image-state.csv')
-    csvcontent = csvfile['Body'].read().split(b'\n')
+  while csvcontent == 0:
+    s3.Bucket('user-input-image').download_file('public/image-state.csv', '/tmp/image-state.csv') 
+    CSVData = open('/tmp/image-state.csv')
+    csvcontent = np.genfromtxt(CSVData, delimiter=",")
 
   # ML Prediction
   # Retrieve image from S3 and classify the image
@@ -61,6 +63,31 @@ def image_class(event, context):
   small_image = image.resize((224,224)) # input size for VGG16 224,224
   small_imgarr = np.array(small_image)
   img = np.expand_dims(small_imgarr, axis=0)
+  # First check to see if the image is a building or not. If it is, write a 0 to the binary.csv and continue.
+  # If not, write a 1 to the binary.csv and terminate.
+  binary_output = binary_model.predict(img)
+  print(binary_output)
+  BUCKET_NAME = 'user-input-image'
+  if (binary_output[0][0] <  0.5):
+    # Update a csv file(write a 0) in S3 to tell Android studio that the image was a building
+    s3 = boto3.resource('s3')
+    s3.Bucket('user-input-image').download_file('public/binary.csv', '/tmp/binary.csv') 
+    CSVData = open('/tmp/binary.csv')
+    state_var = [0]
+    np.savetxt('/tmp/binary.csv', state_var, delimiter=",")
+    client = boto3.client('s3')
+    client.upload_file('/tmp/binary.csv', BUCKET_NAME,'public/binary.csv')
+  else:
+    # Update a csv file(write a 1) in S3 to tell Android studio that the image was not a building
+    s3 = boto3.resource('s3')
+    s3.Bucket('user-input-image').download_file('public/binary.csv', '/tmp/binary.csv') 
+    CSVData = open('/tmp/binary.csv')
+    state_var = [1]
+    np.savetxt('/tmp/binary.csv', state_var, delimiter=",")
+    client = boto3.client('s3')
+    client.upload_file('/tmp/binary.csv', BUCKET_NAME,'public/binary.csv')
+    #Then kill the runtime
+    return 0
   output = model.predict(img)
   # dataframe of all of the database coordinates from the container image
   df = pd.read_csv('FINAL_CSV.csv')
@@ -98,13 +125,15 @@ def image_class(event, context):
 
   # Pause the code while user is selecting destination
   # Read a csv file that will update a value to tell this function when to continue
-  s3 = boto3.client('s3')
-  csvfile = s3.get_object(Bucket='user-input-image', Key='public/dest-state.csv')
-  csvcontent = csvfile['Body'].read().split(b'\n')
+  s3 = boto3.resource('s3')
+  s3.Bucket('user-input-image').download_file('public/dest-state.csv', '/tmp/dest-state.csv') 
+  CSVData = open('/tmp/dest-state.csv')
+  csvcontent = np.genfromtxt(CSVData, delimiter=",")
   # pause the code while the user is still selecting their destination (dest-state.csv first cell==0)
-  while csvcontent == "0":
-    csvfile = s3.get_object(Bucket='user-input-image', Key='public/dest-state.csv')
-    csvcontent = csvfile['Body'].read().split(b'\n')
+  while csvcontent == 0:
+    s3.Bucket('user-input-image').download_file('public/dest-state.csv', '/tmp/dest-state.csv') 
+    CSVData = open('/tmp/dest-state.csv')
+    csvcontent = np.genfromtxt(CSVData, delimiter=",")
   # Opens the end coordinate csv to access the destination coordinates
   s3 = boto3.resource('s3')
   s3.Bucket('user-input-image').download_file('public/end_coordinates.csv', '/tmp/end_coordinates.csv') 
@@ -233,7 +262,7 @@ def image_class(event, context):
   s3 = boto3.resource('s3')
   s3.Bucket('user-input-image').download_file('public/comp-state.csv', '/tmp/comp-state.csv') 
   CSVData = open('/tmp/comp-state.csv')
-  state_var = [4]
+  state_var = [1]
   np.savetxt('/tmp/comp-state.csv', state_var, delimiter=",")
   client = boto3.client('s3')
   client.upload_file('/tmp/comp-state.csv', BUCKET_NAME,'public/comp-state.csv')
